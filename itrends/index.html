@@ -1,41 +1,92 @@
 
-<html>
+<head>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="https://online.tableausoftware.com/javascripts/api/tableau_v8.js"></script>
+<script src="jquery.bpopup.js"></script>
+</head>
+
+<style>
+#tableauViz {
+  height: 450px;
+  min-width: 400px;
+}
+</style>
+<script>
+var viz, workbook, activeSheet,a,b,c,d,e,f,g;
+
+function initializeViz() {
+
+//alert("hi");
+  var placeholderDiv = document.getElementById("tableauViz");
+  var url = "https://public.tableausoftware.com/views/itrends/iTrends?:embed=y&:display_count=no";
+  var options = {
+    width: placeholderDiv.offsetWidth,
+    height: placeholderDiv.offsetHeight,
+    hideTabs: true,
+    hideToolbar: true,
+    onFirstInteractive: function () {
+      workbook = viz.getWorkbook();
+      activeSheet = workbook.getActiveSheet().getWorksheets()[0];
+    }
+  };
+  viz = new tableauSoftware.Viz(placeholderDiv, url, options);
+}  
+
+$(document).ready(function(){
+$(initializeViz);
+$(listenToMarksSelection);
+});
+
+function filterSingleValue() {
+console.log(activeSheet);
+  activeSheet.applyFilterAsync(
+    "Eventid",
+    "1",
+    tableauSoftware.FilterUpdateType.REPLACE);
+}
+
+function revertAll() {
+  workbook.revertAllAsync();
+}  
 
 
-<body>
+//events
 
-<h1>?????HashTrends????
-</h1>
+function listenToMarksSelection() {
+  viz.addEventListener(tableauSoftware.TableauEventName.MARKS_SELECTION, onMarksSelection);
+	console.log("EVENT TRACKING ADDED");
+}
 
-<script type='text/javascript' src='https://public.tableausoftware.com/javascripts/api/viz_v1.js'>
+function onMarksSelection(marksEvent) {
+  return marksEvent.getMarksAsync().then(reportSelectedMarks);
+}
+
+function reportSelectedMarks(marks) {
+  var html = [];
+  for (var markIndex = 0; markIndex < marks.length; markIndex++) {
+    var pairs = marks[markIndex].getPairs();
+    html.push("<b>Mark " + markIndex + ":</b><ul>");
+    for (var pairIndex = 0; pairIndex < pairs.length; pairIndex++) {
+      var pair = pairs[pairIndex];
+      html.push("<li><b>fieldName:</b> " + pair.fieldName);
+      html.push("<br/><b>formattedValue:</b> " + pair.formattedValue + "</li>");
+    }
+    html.push("</ul>");
+  }
+
+  var dialog = $("#dialog");
+  dialog.html(html.join(""));
+  dialog.dialog("open");
+
+}
+
+function removeMarksSelectionEventListener() {
+  viz.removeEventListener(tableauSoftware.TableauEventName.MARKS_SELECTION, onMarksSelection);
+}
 </script>
-<div class='tableauPlaceholder' style='width: 1004px; height: 895px;'>
-<noscript>
-<a href='#'>
-<img alt=' ' src='https:&#47;&#47;public.tableausoftware.com&#47;static&#47;images&#47;it&#47;itrends&#47;iTrends&#47;1_rss.png' style='border: none' />
-</a>
-</noscript>
-<object class='tableauViz' width='1004' height='895' style='display:none;'>
-<param name='host_url' value='https%3A%2F%2Fpublic.tableausoftware.com%2F' /> 
-<param name='site_root' value='' />
-<param name='name' value='itrends&#47;iTrends' />
-<param name='tabs' value='yes' />
-<param name='toolbar' value='yes' />
-<param name='static_image' value='https:&#47;&#47;public.tableausoftware.com&#47;static&#47;images&#47;it&#47;itrends&#47;iTrends&#47;1.png' /> 
-<param name='animate_transition' value='yes' />
-<param name='display_static_image' value='yes' />
-<param name='display_spinner' value='yes' />
-<param name='display_overlay' value='yes' />
-<param name='display_count' value='yes' />
-</object>
-</div>
-<div style='width:1004px;height:22px;padding:0px 10px 0px 0px;color:black;font:normal 8pt verdana,helvetica,arial,sans-serif;'>
-<div style='float:right; padding-right:8px;'>
-<a href='http://www.tableausoftware.com/public/about-tableau-products?ref=https://public.tableausoftware.com/views/itrends/iTrends' target='_blank'>
-</a>
-</div>
-</div>
-
-</body>
-
-</html>
+<!-- <button type="button" onclick="$('#tableauViz').html(''); initializeViz()" >text</button>  -->
+<button type="button" onclick="filterSingleValue()" >text</button> 
+<br>
+<div id="tableauViz">THIS IS A TEST</div>
+<div id="dialog"></div>
+<div id="dialog2">THIS IS ATESTINASDSAKDJASLKDJ</div>
